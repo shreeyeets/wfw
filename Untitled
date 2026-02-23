@@ -1,0 +1,586 @@
+import React, { useState, useEffect } from 'react';
+
+const decisionTree = {
+  start: {
+    question: "How are you feeling right now?",
+    subtext: "Be honest – there's no wrong answer",
+    emoji: "👋",
+    options: [
+      { label: "Overwhelmed or stuck", next: "knowReason", context: "feeling_overwhelmed", icon: "🌊" },
+      { label: "Fine, just want to be productive", next: "wantProductive", context: "feeling_fine", icon: "🎯" },
+      { label: "I'm not really sure", next: "exploreStart", context: "feeling_unclear", icon: "🤷" },
+    ]
+  },
+  knowReason: {
+    question: "Do you have a sense of what's causing this?",
+    subtext: "It's okay if you're not sure",
+    emoji: "💭",
+    options: [
+      { label: "Yes – it's about a task or work", next: "haveEnergy", context: "cause_task_related", icon: "📋" },
+      { label: "Yes – it's something personal", next: "personalCause", context: "cause_personal", icon: "💭" },
+      { label: "Not really sure", next: "exploreOverwhelm", context: "unsure_cause", icon: "🌫️" },
+    ]
+  },
+  personalCause: {
+    question: "Would you like to talk about what's on your mind first?",
+    subtext: "Sometimes we need to process before we can focus",
+    emoji: "🌿",
+    options: [
+      { label: "Yes, I need to talk it out", next: "listeningMode", context: "needs_to_talk", icon: "💬" },
+      { label: "I'd rather just get something done", next: "haveEnergy", context: "wants_distraction", icon: "🎯" },
+      { label: "I'm not sure what I need", next: "exploreFeeling", context: "uncertain", icon: "🤷" },
+    ]
+  },
+  exploreStart: {
+    question: "That's okay. What sounds most appealing right now?",
+    subtext: "Go with your gut",
+    emoji: "🧭",
+    options: [
+      { label: "Get something done", next: "haveEnergy", context: "wants_action", icon: "✨" },
+      { label: "Just talk it out", next: "listeningMode", context: "wants_to_talk", icon: "💬" },
+      { label: "Help me figure it out", next: "deepExplore", context: "needs_guidance", icon: "🔮" },
+    ]
+  },
+  exploreOverwhelm: {
+    question: "No worries. What would help most right now?",
+    subtext: "There's no wrong choice",
+    emoji: "🌿",
+    options: [
+      { label: "Help me untangle it", next: "deepExplore", context: "wants_clarity", icon: "🧶" },
+      { label: "Give me something to focus on", next: "haveEnergy", context: "wants_distraction", icon: "🎯" },
+      { label: "Just be here with me", next: "listeningMode", context: "needs_presence", icon: "🤝" },
+    ]
+  },
+  wantProductive: {
+    question: "Would you like help getting more done today?",
+    subtext: "We can work together on this",
+    emoji: "🌱",
+    options: [
+      { label: "Yes, let's do it", next: "haveEnergy", context: "wants_productivity_help", icon: "👟" },
+      { label: "Something's in my way", next: "whatsStopping", context: "mental_block", icon: "🚧" },
+      { label: "I just want to talk", next: "listeningMode", context: "wants_to_talk", icon: "💬" },
+    ]
+  },
+  haveEnergy: {
+    question: "Do you have the energy to work on something right now?",
+    subtext: "Be real with yourself",
+    emoji: "🔋",
+    options: [
+      { label: "Yes, I'm ready", next: "canOpen", context: "has_energy", icon: "💪" },
+      { label: "I'm running low", next: "energyBooster", context: "low_energy", icon: "🪫" },
+      { label: "Somewhere in between", next: "energyCheck", context: "medium_energy", icon: "⚖️" },
+    ]
+  },
+  energyCheck: {
+    question: "What feels more true right now?",
+    subtext: "Trust your instinct",
+    emoji: "⚖️",
+    options: [
+      { label: "I could push through if I start", next: "canOpen", context: "willing_to_try", icon: "🌱" },
+      { label: "I need a small break first", next: "energyBoostResult", context: "needs_break", icon: "☕" },
+      { label: "There's something else going on", next: "underlyingFear", context: "deeper_issue", icon: "🌊" },
+    ]
+  },
+  canOpen: {
+    question: "When you think about starting, what comes up?",
+    subtext: "Trust your gut",
+    emoji: "👣",
+    options: [
+      { label: "I'm ready – I know what to do", next: "readyToStart", context: "clear_and_ready", icon: "✨" },
+      { label: "Resistance or heaviness", next: "whatsStopping", context: "feeling_resistance", icon: "🪨" },
+      { label: "Too many things, can't pick one", next: "brainDumpResult", context: "overwhelmed_options", icon: "🌀" },
+      { label: "I don't know where to begin", next: "findStartingPoint", context: "unclear_start", icon: "🌫️" },
+    ]
+  },
+  energyBooster: {
+    question: "What kind of recharge might help?",
+    subtext: "Listen to what your body needs",
+    emoji: "🌸",
+    options: [
+      { label: "Something physical", next: "energyBoostResult", context: "needs_physical", icon: "🚶" },
+      { label: "A mental reset", next: "mentalReset", context: "needs_mental", icon: "🧘" },
+      { label: "I think it's something deeper", next: "underlyingFear", context: "deeper_issue", icon: "🌊" },
+    ]
+  },
+  mentalReset: {
+    question: "What sounds most helpful?",
+    subtext: "Pick what draws you",
+    emoji: "🧘",
+    options: [
+      { label: "Guided breathing", next: "breathingResult", context: "wants_breathing", icon: "🌬️" },
+      { label: "Get my thoughts out", next: "brainDumpResult", context: "wants_dump", icon: "📝" },
+      { label: "Talk to someone", next: "listeningMode", context: "wants_talk", icon: "💭" },
+    ]
+  },
+  whatsStopping: {
+    question: "Do you know what's holding you back?",
+    subtext: "Perfectionism, fear, fatigue, uncertainty...",
+    emoji: "🤔",
+    options: [
+      { label: "Yes, I can name it", next: "tackleBlocker", context: "knows_blocker", icon: "💡" },
+      { label: "I think I'm just tired", next: "energyBooster", context: "actually_tired", icon: "🪫" },
+      { label: "Something's there but I can't name it", next: "blockerExplore", context: "fuzzy_blocker", icon: "🌫️" },
+    ]
+  },
+  blockerExplore: {
+    question: "Does it feel more like...",
+    subtext: "Go with your gut",
+    emoji: "🔍",
+    options: [
+      { label: "Fear or anxiety", next: "addressFear", context: "feels_like_fear", icon: "😰" },
+      { label: "Confusion or overwhelm", next: "brainDumpResult", context: "feels_like_overwhelm", icon: "🌀" },
+      { label: "I really don't know", next: "exploreFeeling", context: "truly_uncertain", icon: "🤷" },
+    ]
+  },
+  underlyingFear: {
+    question: "Is there a worry or fear on your mind?",
+    subtext: "Something that keeps coming back",
+    emoji: "🌿",
+    options: [
+      { label: "Yes, there is", next: "addressFear", context: "has_fear", icon: "🌧️" },
+      { label: "Maybe, I'm not sure", next: "exploreFeeling", context: "possible_fear", icon: "🌫️" },
+      { label: "I don't think so", next: "energyBoostResult", context: "just_tired", icon: "😴" },
+    ]
+  },
+  deepExplore: {
+    question: "What draws you most right now?",
+    subtext: "There's no wrong answer",
+    emoji: "🔮",
+    options: [
+      { label: "Help me feel better", next: "listeningMode", context: "wants_emotional", icon: "💝" },
+      { label: "Help me think clearer", next: "brainDumpResult", context: "wants_clarity", icon: "🔍" },
+      { label: "I'll trust the process", next: "exploreFeeling", context: "open_to_anything", icon: "🌱" },
+    ]
+  },
+  // End states
+  listeningMode: {
+    result: true,
+    title: "Let's Talk",
+    message: "I'm here to listen. No pressure to be productive – sometimes we just need space to process.",
+    icon: "💬",
+    action: "Start chatting",
+    outcomeType: "listening",
+    supportNeeded: "emotional_support",
+    summary: "I'm trying to be productive today but something's in the way. Right now, I don't need solutions or a plan – I just need to talk. I'm feeling emotionally full, maybe overwhelmed or anxious, and I can't focus until I process some of this. I might be dealing with stress from work, personal stuff weighing on me, or just a lot of thoughts I haven't said out loud. I don't want advice right now. I just want to feel heard and have some space to breathe without pressure.",
+    achievement: "Self-Aware",
+    achievementIcon: "🪷"
+  },
+  readyToStart: {
+    result: true,
+    title: "You're Ready",
+    message: "You've got energy and clarity. That's a great place to be. Let's make the most of it.",
+    icon: "🌟",
+    action: "Let's get started",
+    outcomeType: "ready",
+    supportNeeded: "accountability",
+    summary: "I'm trying to be productive today and I actually feel ready. I have energy, I know what I need to work on, and the first step feels clear. My challenge is usually staying focused once I start – I get distracted easily, check my phone, open random tabs, or lose momentum halfway through. I'd love some help staying on track, maybe a check-in or some accountability. I don't need motivation, I just need to keep the momentum going once I begin.",
+    achievement: "Momentum",
+    achievementIcon: "✨"
+  },
+  energyBoostResult: {
+    result: true,
+    title: "Time for a Reset",
+    message: "Your body is asking for a break. Take 5 minutes: stretch, hydrate, breathe, or step outside. You'll come back refreshed.",
+    icon: "🌸",
+    action: "Start my 5-min break",
+    outcomeType: "energy_boost",
+    supportNeeded: "energy_management",
+    summary: "I'm trying to be productive today but my energy is low. I'm not unmotivated – I'm just physically or mentally drained. I might not have slept well, skipped a meal, been sitting too long, or stared at screens all day. I feel like I'm running on empty and pushing through isn't working. I need a short reset – maybe some movement, water, fresh air, or just stepping away for a few minutes. I want to recharge so I can actually focus when I come back.",
+    achievement: "Self-Care",
+    achievementIcon: "🌿"
+  },
+  breathingResult: {
+    result: true,
+    title: "Let's Breathe",
+    message: "A few deep breaths can reset your whole nervous system. Let's do this together.",
+    icon: "🌬️",
+    action: "Guide my breathing",
+    outcomeType: "breathing",
+    supportNeeded: "relaxation",
+    summary: "I'm trying to be productive today but my mind won't slow down. My thoughts are racing, I feel tense, and there's this anxious energy that's making it hard to focus. I might be holding tension in my body – tight shoulders, shallow breathing, clenched jaw. I know I need to calm my nervous system before I can do anything else. I'd like some guided breathing or a simple way to settle down. I'm not looking for a long meditation, just something quick to reset.",
+    achievement: "Centered",
+    achievementIcon: "🧘"
+  },
+  brainDumpResult: {
+    result: true,
+    title: "Clear Your Mind",
+    message: "Your brain is holding a lot. Let's get those thoughts out of your head and somewhere you can see them.",
+    icon: "📝",
+    action: "Start brain dump",
+    outcomeType: "brain_dump",
+    supportNeeded: "clarity",
+    summary: "I'm trying to be productive today but my head is too full. I have so many thoughts, tasks, worries, and ideas swirling around that I can't think straight. Everything feels equally urgent and I'm paralyzed by all the mental clutter. I haven't externalized any of this – it's all just bouncing around in my head. I need to get it all out somewhere so I can see it, sort through it, and figure out what actually matters. A brain dump would really help me right now.",
+    achievement: "Clarity",
+    achievementIcon: "💎"
+  },
+  tackleBlocker: {
+    result: true,
+    title: "Let's Work Through It",
+    message: "You've identified what's blocking you – that's a big step. Let's tackle it together and get it out of your way.",
+    icon: "💪",
+    action: "Talk about what's blocking me",
+    outcomeType: "tackle_blocker",
+    supportNeeded: "problem_solving",
+    summary: "I'm trying to be productive today but something specific is blocking me and I know what it is. It might be perfectionism – I'm scared of doing it wrong or not doing it perfectly. Or it could be fear of judgment, imposter syndrome, or feeling like I'm not good enough for this task. I keep procrastinating because the stakes feel high and I'm putting too much pressure on myself. I want to work through this block, maybe reframe how I'm thinking about it, and find a way to just start even if it's not perfect.",
+    achievement: "Breakthrough",
+    achievementIcon: "🔓"
+  },
+  findStartingPoint: {
+    result: true,
+    title: "Finding Your Start",
+    message: "Not knowing where to begin is completely normal. Let's find the right entry point together.",
+    icon: "🧭",
+    action: "Help me figure it out",
+    outcomeType: "find_start",
+    supportNeeded: "task_clarity",
+    summary: "I'm trying to be productive today but I don't know where to start. I either have too many things on my plate and can't decide what's most important, or the task in front of me feels too big and vague. I'm overwhelmed by options or paralyzed because I can't see a clear first step. I keep stalling because nothing feels like the 'right' place to begin. I need help breaking things down, picking one thing, and finding a small concrete action I can take right now to build momentum.",
+    achievement: "Explorer",
+    achievementIcon: "🗺️"
+  },
+  addressFear: {
+    result: true,
+    title: "Let's Address This",
+    message: "It takes courage to acknowledge a fear. Let's talk through it and see how we can move past it together.",
+    icon: "🌱",
+    action: "Talk about what's worrying me",
+    outcomeType: "address_fear",
+    supportNeeded: "anxiety_support",
+    summary: "I'm trying to be productive today but there's an underlying fear or anxiety that's getting in the way. It's not just about the task – there's something deeper. I might be worried about failing, scared of what happens if I succeed, anxious about being judged, or dreading a conversation or outcome. This worry keeps pulling my focus and I can't fully engage with my work until I address it. I'd like to talk through what's bothering me and feel understood before jumping into tasks.",
+    achievement: "Courageous",
+    achievementIcon: "🦋"
+  },
+  exploreFeeling: {
+    result: true,
+    title: "Let's Explore Together",
+    message: "Sometimes we just feel off without knowing why. Let's chat and see what we discover.",
+    icon: "🔍",
+    action: "Explore with me",
+    outcomeType: "explore",
+    supportNeeded: "self_discovery",
+    summary: "I'm trying to be productive today but something feels off and I can't pinpoint what. I'm not sure if I'm tired, anxious, sad, or just disconnected. There's a general unease or low mood but I can't name it. I might be avoiding something without realizing it, or there could be emotions I haven't processed. I don't need a quick fix – I need someone to gently help me explore what's going on. I'm open to discovering what I actually need right now, even if it's not what I expected.",
+    achievement: "Curious",
+    achievementIcon: "🌸"
+  }
+};
+
+function Confetti({ show }) {
+  const [particles, setParticles] = useState([]);
+  
+  useEffect(() => {
+    if (show) {
+      const colors = ['#E8D4E8', '#D4E8E0', '#E8E4D4', '#D4E0E8', '#E8D4D8'];
+      const newParticles = Array.from({ length: 35 }).map((_, i) => ({
+        id: i,
+        x: Math.random() * 100,
+        delay: Math.random() * 0.5,
+        color: colors[Math.floor(Math.random() * colors.length)]
+      }));
+      setParticles(newParticles);
+    }
+  }, [show]);
+
+  if (!show) return null;
+
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
+      {particles.map(p => (
+        <div
+          key={p.id}
+          className="absolute w-2 h-2 rounded-full animate-confetti"
+          style={{
+            left: `${p.x}%`,
+            backgroundColor: p.color,
+            animationDelay: `${p.delay}s`
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ProgressBar({ current, total }) {
+  const percentage = Math.min((current / total) * 100, 100);
+  
+  return (
+    <div className="mb-8">
+      <div className="h-1 bg-stone-100 rounded-full overflow-hidden">
+        <div 
+          className="h-full rounded-full transition-all duration-700 ease-out"
+          style={{ 
+            width: `${percentage}%`,
+            background: 'linear-gradient(90deg, #E8D4E8, #D4E8E0)'
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function QuestionCard({ node, onSelect, onBack, canGoBack }) {
+  const [selectedIndex, setSelectedIndex] = useState(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const handleSelect = (option, index) => {
+    setSelectedIndex(index);
+    setIsTransitioning(true);
+    setTimeout(() => {
+      onSelect(option.next, option.context);
+      setSelectedIndex(null);
+      setIsTransitioning(false);
+    }, 300);
+  };
+
+  return (
+    <div className={`transition-all duration-300 ${isTransitioning ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'}`}>
+      <div className="text-center mb-8">
+        <span className="text-3xl mb-4 block">{node.emoji}</span>
+        <h2 className="text-xl font-medium text-stone-600 mb-2">
+          {node.question}
+        </h2>
+        <p className="text-stone-400 text-sm">{node.subtext}</p>
+      </div>
+      
+      <div className="space-y-3">
+        {node.options.map((option, index) => (
+          <button
+            key={index}
+            onClick={() => handleSelect(option, index)}
+            disabled={isTransitioning}
+            className={`w-full p-4 text-left rounded-2xl border transition-all duration-200 group
+              ${selectedIndex === index 
+                ? 'border-stone-200 bg-stone-50' 
+                : 'border-stone-100 hover:border-stone-200 hover:bg-stone-50/50'
+              }
+              ${isTransitioning && selectedIndex !== index ? 'opacity-50' : ''}
+            `}
+          >
+            <div className="flex items-center gap-4">
+              <span className="text-xl opacity-60 group-hover:opacity-80 transition-opacity">{option.icon}</span>
+              <div className="flex-1">
+                <div className="font-medium text-stone-600">{option.label}</div>
+              </div>
+              <div className="text-stone-200 group-hover:text-stone-400 group-hover:translate-x-0.5 transition-all">
+                →
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+      
+      {canGoBack && (
+        <button
+          onClick={onBack}
+          disabled={isTransitioning}
+          className="mt-6 text-stone-300 hover:text-stone-500 text-sm flex items-center gap-2 mx-auto transition-colors"
+        >
+          <span>←</span> Back
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ResultCard({ node, onRestart, onAction }) {
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [showContent, setShowContent] = useState(false);
+  
+  useEffect(() => {
+    setShowConfetti(true);
+    setTimeout(() => setShowContent(true), 100);
+    const timer = setTimeout(() => setShowConfetti(false), 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div className={`text-center transition-all duration-500 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+      <Confetti show={showConfetti} />
+      
+      <div 
+        className="inline-flex items-center justify-center w-20 h-20 rounded-3xl mb-6"
+        style={{ background: 'linear-gradient(135deg, #F5EEF5, #EEF5F2)' }}
+      >
+        <span className="text-4xl">{node.icon}</span>
+      </div>
+      
+      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-50 text-stone-500 text-xs font-medium mb-4">
+        <span>{node.achievementIcon}</span>
+        <span>{node.achievement}</span>
+      </div>
+      
+      <h2 className="text-xl font-medium text-stone-600 mb-3">
+        {node.title}
+      </h2>
+      
+      <p className="text-stone-400 mb-8 leading-relaxed text-sm">
+        {node.message}
+      </p>
+      
+      <button
+        onClick={onAction}
+        className="w-full p-4 rounded-2xl text-white font-medium hover:shadow-md hover:translate-y-[-1px] transition-all duration-200 mb-4"
+        style={{ background: 'linear-gradient(135deg, #C9B8C9, #B8C9C0)' }}
+      >
+        {node.action}
+      </button>
+      
+      <button
+        onClick={onRestart}
+        className="text-stone-300 hover:text-stone-500 text-sm transition-colors"
+      >
+        Start over
+      </button>
+    </div>
+  );
+}
+
+function FeedbackModal({ isOpen, onClose, onSubmit, outcomeData }) {
+  const [rating, setRating] = useState(null);
+  const [feedback, setFeedback] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    
+    const feedbackData = {
+      timestamp: new Date().toISOString(),
+      rating: rating,
+      feedback: feedback || '(no comment)',
+      outcome: outcomeData?.outcomeType || 'unknown',
+      supportNeeded: outcomeData?.supportNeeded || 'unknown',
+      journeyPath: outcomeData?.journeyPath?.join(' → ') || 'unknown'
+    };
+    
+    try {
+      const GOOGLE_SHEETS_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+      
+      if (GOOGLE_SHEETS_URL && GOOGLE_SHEETS_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+        await fetch(GOOGLE_SHEETS_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(feedbackData)
+        });
+      }
+      
+      console.log('Feedback submitted:', feedbackData);
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+    }
+    
+    onSubmit(feedbackData);
+    setSubmitting(false);
+    setSubmitted(true);
+    
+    setTimeout(() => {
+      onClose();
+      setSubmitted(false);
+      setRating(null);
+      setFeedback('');
+    }, 1500);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-stone-900/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-xl">
+        {submitted ? (
+          <div className="text-center py-6">
+            <div className="text-4xl mb-3">🙏</div>
+            <h3 className="text-lg font-medium text-stone-600">Thank you</h3>
+            <p className="text-stone-400 text-sm">Your feedback helps us improve.</p>
+          </div>
+        ) : (
+          <>
+            <div className="text-center mb-6">
+              <h3 className="text-lg font-medium text-stone-600 mb-1">Quick feedback</h3>
+              <p className="text-stone-400 text-sm">Did this help you figure out what you need?</p>
+            </div>
+            
+            <div className="flex gap-1 justify-center mb-6">
+              {[
+                { emoji: '😕', label: 'No' },
+                { emoji: '😐', label: 'Meh' },
+                { emoji: '🙂', label: 'A bit' },
+                { emoji: '😊', label: 'Yes' },
+                { emoji: '🤩', label: 'Yes!' }
+              ].map((item, i) => (
+                <button
+                  key={i}
+                  onClick={() => setRating(i + 1)}
+                  disabled={submitting}
+                  className={`flex flex-col items-center p-3 rounded-xl transition-all ${
+                    rating === i + 1 
+                      ? 'bg-stone-100 scale-105' 
+                      : 'hover:bg-stone-50'
+                  }`}
+                >
+                  <span className="text-2xl">{item.emoji}</span>
+                  <span className="text-[10px] text-stone-400 mt-1">{item.label}</span>
+                </button>
+              ))}
+            </div>
+            
+            <textarea
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              placeholder="Any other thoughts? (optional)"
+              disabled={submitting}
+              className="w-full p-4 border border-stone-100 rounded-2xl resize-none h-24 mb-4 focus:outline-none focus:border-stone-200 transition-colors text-sm text-stone-600 placeholder-stone-300"
+            />
+            
+            <div className="flex gap-3">
+              <button
+                onClick={onClose}
+                disabled={submitting}
+                className="flex-1 p-3 rounded-2xl border border-stone-100 text-stone-400 hover:bg-stone-50 font-medium transition-colors text-sm"
+              >
+                Skip
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={!rating || submitting}
+                className={`flex-1 p-3 rounded-2xl font-medium transition-all text-sm ${
+                  rating && !submitting
+                    ? 'text-white hover:shadow-md'
+                    : 'bg-stone-100 text-stone-300 cursor-not-allowed'
+                }`}
+                style={rating && !submitting ? { background: 'linear-gradient(135deg, #C9B8C9, #B8C9C0)' } : {}}
+              >
+                {submitting ? 'Sending...' : 'Submit'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function ProductivityHelper() {
+  const [currentNode, setCurrentNode] = useState('start');
+  const [history, setHistory] = useState([]);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [journeyLog, setJourneyLog] = useState([]);
+  const [contextPath, setContextPath] = useState([]);
+  const [questionNumber, setQuestionNumber] = useState(1);
+
+  const node = decisionTree[currentNode];
+
+  const handleSelect = (next, context) => {
+    setHistory([...history, currentNode]);
+    setJourneyLog([...journeyLog, { from: currentNode, to: next, context, timestamp: new Date() }]);
+    setContextPath([...contextPath, context]);
+    setCurrentNode(next);
+    setQuestionNumber(prev => prev + 1);
+  };
+
+  const handleBack = () => {
+    const newHistory = [...history];
+    const previous = newHistory.pop();
+    const newContextPath = [...contextPath];
+    newContextPath.pop();
+    setHistory(newHistory);
