@@ -3,7 +3,6 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout"
 import { LeftPanel } from "@/components/layout/LeftPanel"
 import { RightPanel } from "@/components/layout/RightPanel"
 import { GreetingSection } from "@/components/sections/GreetingSection"
-import { TalkToWysaSection } from "@/components/sections/TalkToWysaSection"
 import { CreateChallengeSection } from "@/components/sections/CreateChallengeSection"
 import { ActiveChallengesSection } from "@/components/sections/ActiveChallengesSection"
 import { WysaToolsSection } from "@/components/sections/WysaToolsSection"
@@ -79,7 +78,6 @@ export function DashboardPage() {
                 <div className="space-y-10">
                     <div className="space-y-6">
                         <GreetingSection />
-                        <TalkToWysaSection />
                     </div>
 
                     {/* Active Challenges — shown only when challenges exist */}

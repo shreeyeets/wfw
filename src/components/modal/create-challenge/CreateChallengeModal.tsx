@@ -78,7 +78,7 @@ export function CreateChallengeModal({ children, onCreate }: CreateChallengeModa
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent
-                className="w-full max-w-2xl mx-auto p-0 overflow-hidden border-none shadow-2xl rounded-2xl sm:rounded-3xl"
+                className="w-full max-w-4xl mx-auto p-0 overflow-hidden border-none shadow-2xl rounded-2xl sm:rounded-3xl"
                 onPointerDownOutside={(e) => e.preventDefault()}
                 onEscapeKeyDown={(e) => e.preventDefault()}
             >
@@ -130,15 +130,17 @@ export function CreateChallengeModal({ children, onCreate }: CreateChallengeModa
                 </div>
 
                 {/* ───── Content: scrollable, fully responsive height ───── */}
-                <div className="px-5 pb-5 pt-4 overflow-y-auto max-h-[calc(85svh-4rem)] sm:max-h-[calc(80svh-4rem)] min-h-[420px] sm:min-h-[480px]">
-                    {currentStep === 1 && <Step1Audience state={state} setField={setField} handleContinue={nextStep} />}
-                    {currentStep === 2 && <Step2Goal state={state} setField={setField} handleContinue={nextStep} />}
-                    {currentStep === 3 && <Step3Setup state={state} setField={setField} handleContinue={nextStep} handleRefreshName={handleRefreshName} />}
-                    {currentStep === 4 && <Step4Effort state={state} setField={setField} handleContinue={nextStep} toggleWeekday={toggleWeekday} />}
-                    {currentStep === 5 && <Step5Loading state={state} />}
-                    {currentStep === 6 && <Step6Overview state={state} handleContinue={nextStep} />}
-                    {currentStep === 7 && <Step7Invite handleContinue={nextStep} />}
-                    {currentStep === 8 && <Step8Complete handleSubmit={handleSubmit} challengeName={state.challengeName} />}
+                <div className="px-5 pb-5 pt-4 overflow-y-auto max-h-[calc(90svh-4rem)] sm:max-h-[calc(85svh-4rem)] min-h-[500px] sm:min-h-[600px] flex flex-col justify-center">
+                    <div className="w-full max-w-2xl mx-auto">
+                        {currentStep === 1 && <Step1Audience state={state} setField={setField} handleContinue={nextStep} />}
+                        {currentStep === 2 && <Step2Goal state={state} setField={setField} handleContinue={nextStep} />}
+                        {currentStep === 3 && <Step3Setup state={state} setField={setField} handleContinue={nextStep} handleRefreshName={handleRefreshName} />}
+                        {currentStep === 4 && <Step4Effort state={state} setField={setField} handleContinue={nextStep} toggleWeekday={toggleWeekday} />}
+                        {currentStep === 5 && <Step5Loading state={state} />}
+                        {currentStep === 6 && <Step6Overview state={state} handleContinue={nextStep} />}
+                        {currentStep === 7 && <Step7Invite handleContinue={nextStep} />}
+                        {currentStep === 8 && <Step8Complete handleSubmit={handleSubmit} challengeName={state.challengeName} />}
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>
